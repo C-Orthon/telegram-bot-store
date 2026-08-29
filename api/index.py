@@ -11,7 +11,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().strip("'\"").rstrip("/")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip().strip("'\"")
 
 # Configurable Payment & Admin Details
-OWNER_USERNAME = "@TM1845"  # Without @ symbol
+OWNER_USERNAME = "TM1845"  # Without @ symbol
 BANK_ACCOUNT_INFO = "Bank: Commercial Bank\nAccount No: 1000xxxxxxxxx\nAccount Name: Store Owner"
 ADMIN_TELEGRAM_IDS = []  # Optional: Put your numeric Telegram User ID here to restrict admin commands, e.g., [123456789]
 
