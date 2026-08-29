@@ -5,10 +5,14 @@ from supabase import create_client
 
 app = Flask(__name__)
 
-# Fetch Environment Variables
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# Fetch and clean Environment Variables
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip().strip("'\"")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().strip("'\"").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "").strip().strip("'\"")
+
+# Auto-format SUPABASE_URL if missing protocol
+if SUPABASE_URL and not SUPABASE_URL.startswith("http://") and not SUPABASE_URL.startswith("https://"):
+    SUPABASE_URL = f"https://{SUPABASE_URL}"
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}" if TOKEN else ""
 
@@ -36,9 +40,8 @@ def webhook(path):
         
         if missing:
             return f"Missing Environment Variables: {', '.join(missing)}", 200
-        return "Telegram Bot Server is Online!", 200
+        return f"Telegram Bot Server is Online! URL: {SUPABASE_URL}", 200
 
-    # POST Request Processing
     try:
         json_data = request.get_json(force=True, silent=True)
         if not json_data or "message" not in json_data:
@@ -51,21 +54,20 @@ def webhook(path):
         if not chat_id or not text:
             return "OK", 200
 
-        # Check credentials inside request
         if not TOKEN or not SUPABASE_URL or not SUPABASE_KEY:
-            send_telegram_message(chat_id, "⚠️ <b>Error:</b> Environment variables are missing on Vercel dashboard.")
+            send_telegram_message(chat_id, "⚠️ <b>Error:</b> Environment variables missing on Vercel.")
             return "OK", 200
 
-        # Attempt Supabase Connection
+        # Initialize Supabase client
         try:
             supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         except Exception as sb_err:
-            send_telegram_message(chat_id, f"⚠️ <b>Supabase Connection Error:</b> {str(sb_err)}")
+            send_telegram_message(chat_id, f"⚠️ <b>Supabase Error ({SUPABASE_URL}):</b> {str(sb_err)}")
             return "OK", 200
 
         # Handle Commands
         if text == "/start":
-            send_telegram_message(chat_id, "Hello! Type /catalog to see available items or type a product name.")
+            send_telegram_message(chat_id, "Hello! Type /catalog to see available items or search for a product.")
             return "OK", 200
 
         if text == "/catalog":
@@ -87,8 +89,7 @@ def webhook(path):
         return "OK", 200
 
     except Exception as err:
-        # Prevent 500 error and print error in Vercel / Telegram
         print(f"CRITICAL ERROR: {str(err)}")
         if 'chat_id' in locals() and chat_id:
-            send_telegram_message(chat_id, f"⚠️ <b>Bot Code Crashed:</b> {str(err)}")
+            send_telegram_message(chat_id, f"⚠️ <b>Bot Execution Error:</b> {str(err)}")
         return "OK", 200
