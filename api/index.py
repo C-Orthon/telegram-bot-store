@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler
 from telegram import Bot, Update
 from supabase import create_client, Client
 
-# Environment Variables
+# Fetch Environment Variables from Vercel settings
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -45,7 +45,7 @@ async def process_update(update_data):
                 await bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
         return
 
-    # Handle Product Inquiry Search
+    # Handle Product Search
     response = supabase.table("products").select("*").execute()
     products = response.data
 
@@ -64,7 +64,6 @@ class handler(BaseHTTPRequestHandler):
         post_data = self.rfile.read(content_length)
         json_data = json.loads(post_data.decode('utf-8'))
 
-        # Run async bot code safely in Serverless runtime
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
